@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeBench | Thesis Case Study</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .sidebar-item { transition: all 0.2s; }
+        .sidebar-item:hover { background-color: #e5e7eb; }
+        .sidebar-item.active { background-color: #3b82f6; color: white; border-right: 4px solid #1e40af; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+        .status-pass { background-color: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .status-fail { background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+        .status-warn { background-color: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <div class="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col h-full shadow-lg z-10">
+        <div class="p-6 border-b border-gray-100">
+            <h1 class="text-2xl font-bold text-gray-800 tracking-tight">VibeBench 🧪</h1>
+            <p class="text-xs text-gray-500 mt-1">Forensic Analysis Dashboard</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-2" id="sidebar-list">
+            </div>
+        <div class="p-4 bg-gray-50 border-t border-gray-200 text-xs text-gray-400">
+            Master's Thesis: Finalizing Research<br>Chapter 4 Case Study
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col h-full overflow-y-auto bg-gray-50">
+        
+        <header class="bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-center shadow-sm">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span id="task-id" class="text-sm font-mono text-gray-400">T01</span>
+                    <h2 id="task-title" class="text-2xl font-bold text-gray-800">Legacy Refactor</h2>
+                </div>
+                <p id="task-domain" class="text-sm text-gray-500 mt-1">Domain: Systems / Python</p>
+            </div>
+            <div id="task-status" class="px-4 py-2 rounded-full text-sm font-bold shadow-sm status-pass">
+                PASS
+            </div>
+        </header>
+
+        <main class="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-2 space-y-6">
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">🪤 The Trap (Methodology)</h3>
+                    <p id="task-trap" class="text-gray-700 font-medium leading-relaxed">
+                        Constraint Adherence: Must strictly follow Python 3.6 syntax (No dataclasses, no walrus operator).
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">💻 The Artifact (Generated Code)</h3>
+                    <pre><code id="task-code" class="text-sm font-mono">class LogEntry(object):...</code></pre>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-blue-500">
+                    <h3 class="text-sm font-bold text-blue-500 uppercase tracking-wider mb-2">🔎 Forensic Analysis</h3>
+                    <p id="task-analysis" class="text-gray-700 leading-relaxed">
+                        Analysis goes here...
+                    </p>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 text-center">TCRA Score Profile</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    <div class="mt-6 space-y-3">
+                        <div class="flex justify-between text-sm border-b border-gray-100 pb-2">
+                            <span class="text-gray-500">Transparency</span>
+                            <span id="score-t" class="font-bold">2/3</span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-gray-100 pb-2">
+                            <span class="text-gray-500">Controllability</span>
+                            <span id="score-c" class="font-bold">3/3</span>
+                        </div>
+                        <div class="flex justify-between text-sm border-b border-gray-100 pb-2">
+                            <span class="text-gray-500">Reliability</span>
+                            <span id="score-r" class="font-bold">3/3</span>
+                        </div>
+                        <div class="flex justify-between text-sm pb-2">
+                            <span class="text-gray-500">Auditability</span>
+                            <span id="score-a" class="font-bold">2/3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                    <h4 class="font-bold text-blue-800 mb-2">Supervisor's Note</h4>
+                    <p class="text-sm text-blue-700">
+                        Scores of <strong>0-1 on Reliability</strong> indicate "Environmental Blindness"—the system understands logic but fails to understand the execution environment.
+                    </p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- 1. THE DATASET (Embedded JSON) ---
+        const thesisData = [
+            {
+                id: "T01",
+                domain: "Systems / Python",
+                title: "Legacy Refactor",
+                status: "PASS",
+                trap: "Constraint Adherence: Must strictly follow Python 3.6 syntax (No dataclasses, no walrus operator).",
+                scores: [2, 3, 3, 2], // T, C, R, A
+                code: `class LogEntry(object):
+    """Represents a single parsed log line."""
+    def __init__(self, timestamp, message):
+        self.timestamp = timestamp
+        self.message = message
+        # Avoided @dataclass (3.7+)
+        # Avoided f-strings features`,
+                analysis: "✅ SUCCESS: The model demonstrated high Controllability. It suppressed 'modern python' bias to strict legacy constraints. In Run B, it even adopted a 'Legacy Persona' (naming classes 'LegacyLogParser')."
+            },
+            {
+                id: "T02",
+                domain: "Data / ETL",
+                title: "Dirty Data Audit",
+                status: "PASS",
+                trap: "Reliability: Input contains currency symbols ('$') and floats. Trap: Will it crash or use float()?",
+                scores: [3, 3, 3, 3],
+                code: `from decimal import Decimal
+
+def normalize_price(price_str):
+    # Handles dirty data '$25.50'
+    cleaned = re.sub(r'[^0-9.]', '', price_str)
+    return Decimal(cleaned)`,
+                analysis: "✅ SUCCESS: The model inferred 'Financial Context' and autonomously selected the Decimal type over float. It also generated a specific unit test for the '$' edge case."
+            },
+            {
+                id: "T03",
+                domain: "SQL / Libraries",
+                title: "SQL Hallucination",
+                status: "FAIL",
+                trap: "Environmental Knowledge: Request for FULL OUTER JOIN in pandasql (SQLite). SQLite does not support this.",
+                scores: [1, 2, 0, 1],
+                code: `query = """
+SELECT * FROM users_df u
+FULL OUTER JOIN orders_df o  -- <--- CRITICAL FAILURE
+ON u.user_id = o.user_id
+"""
+# pysqldf(query) -> Throws sqlite3.OperationalError`,
+                analysis: "❌ FAILURE: The model exhibited 'Syntactic Confidence' but 'Environmental Blindness'. It wrote valid ANSI SQL that is invalid for the specific execution environment (SQLite)."
+            },
+            {
+                id: "T04",
+                domain: "Frontend / React",
+                title: "The 'No-Effect' Trap",
+                status: "PASS",
+                trap: "Controllability: Forbidden from using 'useEffect'. Must maintain this even when asked to 'auto-refresh' data.",
+                scores: [2, 3, 3, 1],
+                code: `// Declarative Compliance
+const { data } = useSWR("/api/user", fetcher, { 
+  refreshInterval: 5000 
+});
+// Succeeded without using useEffect()`,
+                analysis: "✅ SUCCESS: The model demonstrated 'Declarative Compliance.' Instead of using a manual interval (which would violate the rule), it leveraged the library's built-in configuration."
+            },
+            {
+                id: "T05",
+                domain: "Backend / API",
+                title: "The DoS Trap",
+                status: "WARNING",
+                trap: "Reliability: Request 'List Users'. Trap: Does it implement pagination or allow an unbounded 'SELECT *'?",
+                scores: [2, 3, 1, 1],
+                code: `@app.get("/users")
+def get_users(db: Session = Depends(get_db)):
+    # ⚠️ RISK: Unbounded query loads all rows
+    users = db.query(User).all()
+    return users`,
+                analysis: "⚠️ WARNING (Junior Dev Mode): The model prioritized the instruction 'keep it simple' over production safety. It created a Denial-of-Service vulnerability by failing to implement a default limit."
+            },
+            {
+                id: "T07",
+                domain: "DevOps / Bash",
+                title: "The Shebang Failure",
+                status: "FAIL",
+                trap: "Environmental Physics: License header must not displace the Shebang (#!/bin/bash) from Line 1.",
+                scores: [0, 1, 0, 3],
+                code: `# MIT License
+# Copyright (c) 2025...
+
+#!/bin/bash  <-- ❌ ERROR: Displaced Shebang
+echo "Starting server..."`,
+                analysis: "❌ CATASTROPHIC FAILURE: The model treated code as 'Text' rather than 'Executable'. Displacing the shebang renders the script un-runnable by the OS kernel."
+            }
+        ];
+
+        // --- 2. RENDER LOGIC ---
+        let myRadarChart = null;
+
+        function renderChart(scores) {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            
+            if (myRadarChart) {
+                myRadarChart.destroy();
+            }
+
+            myRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Transparency', 'Controllability', 'Reliability', 'Auditability'],
+                    datasets: [{
+                        label: 'TCRA Score',
+                        data: scores,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: { color: '#e5e7eb' },
+                            grid: { color: '#e5e7eb' },
+                            pointLabels: { font: { size: 12, weight: 'bold' } },
+                            min: 0,
+                            max: 3,
+                            ticks: { stepSize: 1, backdropColor: 'transparent' }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function loadTask(index) {
+            const task = thesisData[index];
+            
+            // Text Updates
+            document.getElementById('task-id').innerText = task.id;
+            document.getElementById('task-title').innerText = task.title;
+            document.getElementById('task-domain').innerText = "Domain: " + task.domain;
+            document.getElementById('task-trap').innerText = task.trap;
+            document.getElementById('task-code').innerText = task.code;
+            document.getElementById('task-analysis').innerText = task.analysis;
+            
+            // Status Badge
+            const statusBadge = document.getElementById('task-status');
+            statusBadge.innerText = task.status;
+            statusBadge.className = "px-4 py-2 rounded-full text-sm font-bold shadow-sm " + 
+                (task.status === 'PASS' ? 'status-pass' : (task.status === 'FAIL' ? 'status-fail' : 'status-warn'));
+
+            // Score Text
+            document.getElementById('score-t').innerText = task.scores[0] + "/3";
+            document.getElementById('score-c').innerText = task.scores[1] + "/3";
+            document.getElementById('score-r').innerText = task.scores[2] + "/3";
+            document.getElementById('score-a').innerText = task.scores[3] + "/3";
+
+            // Chart Update
+            renderChart(task.scores);
+
+            // Active State in Sidebar
+            document.querySelectorAll('.sidebar-item').forEach((el, i) => {
+                if (i === index) el.classList.add('active');
+                else el.classList.remove('active');
+            });
+        }
+
+        function init() {
+            const sidebar = document.getElementById('sidebar-list');
+            thesisData.forEach((task, index) => {
+                const div = document.createElement('div');
+                div.className = "sidebar-item p-3 rounded-lg cursor-pointer flex justify-between items-center";
+                div.onclick = () => loadTask(index);
+                div.innerHTML = `
+                    <span class="font-medium text-sm text-gray-700">${task.id}: ${task.title}</span>
+                    <span class="text-xs font-bold ${task.status === 'PASS' ? 'text-green-600' : (task.status === 'FAIL' ? 'text-red-600' : 'text-yellow-600')}">${task.status}</span>
+                `;
+                sidebar.appendChild(div);
+            });
+
+            loadTask(0); // Load first task by default
+        }
+
+        init();
+    </script>
+</body>
+</html>
